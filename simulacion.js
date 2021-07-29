@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 
+const DEBUG = true;
+
+function debug() {
+    if (!DEBUG) return;
+    console.debug.apply(this, arguments);
+}
+
 const HV = Number.MAX_SAFE_INTEGER;
 
 // constantes:
@@ -7,7 +14,7 @@ const HV = Number.MAX_SAFE_INTEGER;
 const IAD_SV = 90; // Intervalo entre aplicacion de primer y segunda dosis SV
 const IAD_AZ = 56; // Intervalo entre aplicacion de primer y segunda dosis AZ
 const IAD_SI = 21; // Intervalo entre aplicacion de primer y segunda dosis SI
-const FACTOR_R = 1.2; // Cantidad de gente que tiene contacto estrecho con contagiados y son posbiles nuevos contagiados.
+const FACTOR_R = 0.5; // Cantidad de gente que tiene contacto estrecho con contagiados y son posbiles nuevos contagiados.
 const POBLACION = 45000000;
 const EF_1SV = 0.7; // Efectividad de la primera dosis de SV de no contraer la enfermedad
 const EF_2SV = 0.8; // Efectividad de la segunda dosis de SV de no contraer la enfermedad
@@ -37,41 +44,29 @@ if ((PAPD_1SV + PAPD_2SV + PAPD_1AZ + PAPD_2AZ + PAPD_1SI + PAPD_2SI).toFixed(4)
 
 // -- Datos: --
 
-// Intervalo entre arrivos de stock de dosis de primera dosis de vacuna SV
+// Intervalo entre arrivos de stock de primera dosis de vacuna SV
 function IA_1SV() {
     let R = Math.random();
     // f(R) = 2.0113/((1/R-1)^(1/7.0000))+7.0000
     return Math.round(2.0113 / ((1 / R - 1) ** (1 / 7)) + 7);
 }
 
-// Intervalo entre arrivos de stock de dosis de segunda dosis de vacuna SV
+// Intervalo entre arrivos de stock de segunda dosis de vacuna SV
 function IA_2SV() {
     let R = Math.random();
     // f(R) = R*(50.0000-2.0000)+2.0000
     return Math.round(R * (50 - 2) + 2);
 }
 
-// Intervalo entre arrivos de stock de dosis de primera dosis de vacuna AZ
-function IA_1AZ() {
+// Intervalo entre arrivos de stock de dosis de vacuna AZ
+function IA_AZ() {
     let R = Math.random();
     // f(R) = 2.0046/((1/R-1)^(1/7.0000))+7.0000
     return Math.round(2.0046 / ((1 / R - 1) ** (1 / 7)) + 7);
 }
 
-// Intervalo entre arrivos de stock de dosis de segunda dosis de vacuna AZ
-function IA_2AZ() {
-    // TODO buscar fdp
-    return 15;
-}
-
-// Intervalo entre arrivos de stock de dosis de primera dosis de vacuna SI
-function IA_1SI() {
-    // TODO buscar fdp
-    return 15;
-}
-
-// Intervalo entre arrivos de stock de dosis de segunda dosis de vacuna SI
-function IA_2SI() {
+// Intervalo entre arrivos de stock de dosis de vacuna SI
+function IA_SI() {
     // TODO buscar fdp
     return 15;
 }
@@ -89,26 +84,14 @@ function CDR_2SV() {
     return 1;
 }
 
-// Cantidad de dosis recibidas de primera dosis de vacuna AZ cada IA_1AZ días
-function CDR_1AZ() {
+// Cantidad de dosis recibidas de vacuna AZ cada IA_AZ días
+function CDR_AZ() {
     // TODO buscar fdp
     return 1;
 }
 
-// Cantidad de dosis recibidas de segunda dosis de vacuna AZ cada IA_2AZ días
-function CDR_2AZ() {
-    // TODO buscar fdp
-    return 1;
-}
-
-// Cantidad de dosis recibidas de primera dosis de vacuna SI cada IA_1SI días
-function CDR_1SI() {
-    // TODO buscar fdp
-    return 1;
-}
-
-// Cantidad de dosis recibidas de segunda dosis de vacuna SI cada IA_2SI días
-function CDR_2SI() {
+// Cantidad de dosis recibidas de vacuna SI cada IA_SI días
+function CDR_SI() {
     // TODO buscar fdp
     return 1;
 }
@@ -123,10 +106,8 @@ function CMDPD() {
 
 let ST_1SV = 0;     // Stock de primera dosis vacuna SV
 let ST_2SV = 0;     // Stock de segunda dosis vacuna SV
-let ST_1AZ = 0;     // Stock de primera dosis vacuna AZ
-let ST_2AZ = 0;     // Stock de segunda dosis vacuna AZ
-let ST_1SI = 0;     // Stock de primera dosis vacuna SI
-let ST_2SI = 0;     // Stock de segunda dosis vacuna SI
+let ST_AZ = 0;      // Stock de dosis vacuna AZ
+let ST_SI = 0;      // Stock de dosis vacuna SI
 let CGV_1SV = 0;    // Cantidad de gente vacunada con la primera dosis dosis de la vacuna SV
 let CGV_2SV = 0;    // Cantidad de gente vacunada con la segunda dosis dosis de la vacuna SV
 let CGV_1AZ = 0;    // Cantidad de gente vacunada con la primera dosis dosis de la vacuna AZ
@@ -144,10 +125,8 @@ let CAL = 0;        // Costo de almacenamiento
 // TEF:
 let TPLL_1SV = 0; // Tiempo próxima llegada primeras dosis de la vacuna SV
 let TPLL_2SV = 0; // Tiempo próxima llegada segundas dosis de la vacuna SV
-let TPLL_1AZ = 0; // Tiempo próxima llegada primeras dosis de la vacuna AZ
-let TPLL_2AZ = 0; // Tiempo próxima llegada segundas dosis de la vacuna AZ
-let TPLL_1SI = 0; // Tiempo próxima llegada primeras dosis de la vacuna SI
-let TPLL_2SI = 0; // Tiempo próxima llegada segundas dosis de la vacuna SI
+let TPLL_AZ = 0;  // Tiempo próxima llegada dosis de la vacuna AZ
+let TPLL_SI = 0;  // Tiempo próxima llegada dosis de la vacuna SI
 
 let TPA_1SV = HV; // Tiempo próxima aplicación primera dosis de la vacuna SV
 let TPA_1AZ = HV; // Tiempo próxima aplicación primera dosis de la vacuna AZ
@@ -160,11 +139,12 @@ let TPCD = 0; // Tiempo de proximos contagios diarios.
 
 // ---
 
-const TF = 100;
+const TF = 500;
 let T = 0;
 
 
 do {
+    //console.clear();
     console.log(`Avance: ${(T * 100 / TF).toFixed(2)}%`);
 
     // Determinacion del instante T en que ocurrira el proximo evento
@@ -172,15 +152,26 @@ do {
     let minTPA_2AZ = TPA_2AZ.length > 0 ? TPA_2AZ[0].T : HV; // No need to sort cause array is already sorted by T.
     let minTPA_2SI = TPA_2SI.length > 0 ? TPA_2SI[0].T : HV; // No need to sort cause array is already sorted by T.
     let nextT = Math.min(
-        TPLL_1SV, TPLL_2SV, TPLL_1AZ, TPLL_2AZ, TPLL_1SI, TPLL_2SI,
+        TPLL_1SV, TPLL_2SV, TPLL_AZ, TPLL_SI,
         TPA_1SV, TPA_1AZ, TPA_1SI, minTPA_2SV, minTPA_2AZ, minTPA_2SI,
         TPCD);
 
     // Avance del Tiempo hasta ese instante T
     T = nextT;
-    console.log("T:", T, "TPLL_1SV:", TPLL_1SV, "TPLL_2SV:", TPLL_2SV, "TPLL_1AZ:", TPLL_1AZ, "TPLL_2AZ:", TPLL_2AZ, "TPLL_1SI:", TPLL_1SI, "TPLL_2SI:", TPLL_2SI);
-    console.log("T:", T, "TPA_1SV:", TPA_1SV, "TPA_1AZ:", TPA_1AZ, "TPA_1SI:", TPA_1SI, "minTPA_2SV:", minTPA_2SV, "minTPA_2AZ:", minTPA_2AZ, "minTPA_2SI:", minTPA_2SI);
-    console.log("T:", T, "TPCD:", TPCD);
+
+    // Log de TEF:
+    debug("---- TEF: ----- ", "T:", T);
+    debug("TPLL_1SV:", TPLL_1SV, "TPLL_2SV:", TPLL_2SV, "TPLL_AZ:", TPLL_AZ, "TPLL_SI:", TPLL_SI,);
+    debug("TPA_1SV:", TPA_1SV, "TPA_1AZ:", TPA_1AZ, "TPA_1SI:", TPA_1SI, "minTPA_2SV:", minTPA_2SV, "minTPA_2AZ:", minTPA_2AZ, "minTPA_2SI:", minTPA_2SI);
+    debug("TPCD:", TPCD);
+    // Log de estado:
+    debug("---- Estado: ----- ", "T:", T);
+    debug("T:", T);
+    debug("ST_1SV:", ST_1SV, "ST_2SV:", ST_2SV, "ST_AZ:", ST_AZ, "ST_SI:", ST_SI);
+    debug("CGV_1SV:", CGV_1SV, "CGV_2SV:", CGV_2SV);
+    debug("CGV_1AZ:", CGV_1AZ, "CGV_2AZ:", CGV_2AZ);
+    debug("CGV_1SI:", CGV_1SI, "CGV_2SI:", CGV_2SI);
+    debug("CIT:", CIT, "CAL:", CAL);
 
 
     // Determinacion del tipo de evento que ocurre en el instante T
@@ -188,7 +179,7 @@ do {
         // ---- Llegadas de stock:
 
         case TPLL_1SV: { // Llegada stock dosis 1SV
-            console.log("Llegada stock dosis 1SV");
+            debug("Llegada stock dosis 1SV");
             TPLL_1SV = T + IA_1SV();
             ST_1SV += CDR_1SV();
 
@@ -199,50 +190,38 @@ do {
             break;
         }
         case TPLL_2SV: { // Llegada stock dosis 2SV
-            console.log("Llegada stock dosis 2SV");
+            debug("Llegada stock dosis 2SV");
             TPLL_2SV = T + IA_2SV();
             ST_2SV += CDR_2SV();
             break;
         }
-        case TPLL_1AZ: { // Llegada stock dosis 1AZ
-            console.log("Llegada stock dosis 1AZ");
-            TPLL_1AZ = T + IA_1AZ();
-            ST_1AZ += CDR_1AZ();
+        case TPLL_AZ: { // Llegada stock dosis AZ
+            debug("Llegada stock dosis AZ");
+            TPLL_AZ = T + IA_AZ();
+            ST_AZ += CDR_AZ();
 
             // EFC: Aplicacion dosis 1AZ
-            if (ST_1AZ > 0 && TPA_1AZ === HV) {
+            if (ST_AZ > 0 && TPA_1AZ === HV) {
                 TPA_1AZ = T + 1;
             }
             break;
         }
-        case TPLL_2AZ: { // Llegada stock dosis 2AZ
-            console.log("Llegada stock dosis 2AZ");
-            TPLL_2AZ = T + IA_2AZ();
-            ST_2AZ += CDR_2AZ();
-            break;
-        }
-        case TPLL_1SI: { // Llegada stock dosis 1SI
-            console.log("Llegada stock dosis 1SI");
-            TPLL_1SI = T + IA_1SI();
-            ST_1SI += CDR_1SI();
+        case TPLL_SI: { // Llegada stock dosis SI
+            debug("Llegada stock dosis SI");
+            TPLL_SI = T + IA_SI();
+            ST_SI += CDR_SI();
 
             // EFC: Aplicacion dosis 1SI
-            if (ST_1SI > 0 && TPA_1SI === HV) {
+            if (ST_SI > 0 && TPA_1SI === HV) {
                 TPA_1SI = T + 1;
             }
-            break;
-        }
-        case TPLL_2SI: { // Llegada stock dosis 2SI
-            console.log("Llegada stock dosis 2SI");
-            TPLL_2SI = T + IA_2SI();
-            ST_2SI += CDR_2SI();
             break;
         }
 
         // ---- Aplicacion de dosis:
 
         case TPA_1SV: { // Aplicacion dosis 1SV
-            console.log("Aplicacion dosis 1SV");
+            debug("Aplicacion dosis 1SV");
             let cantidadAplicar = Math.min(Math.floor(CMDPD() * PAPD_1SV), ST_1SV);
             ST_1SV -= cantidadAplicar; // Resto stock
             CGV_1SV += cantidadAplicar; // Sumo cantidad de gente vacunada
@@ -261,7 +240,7 @@ do {
             break;
         }
         case minTPA_2SV: { // Aplicacion dosis 2SV
-            console.log("Aplicacion dosis 2SV");
+            debug("Aplicacion dosis 2SV");
             let cantidadAplicar = TPA_2SV[0].cant;
             let aDiferir = 0;
             if (cantidadAplicar > ST_2SV) {
@@ -280,13 +259,13 @@ do {
             break;
         }
         case TPA_1AZ: { // Aplicacion dosis 1AZ
-            console.log("Aplicacion dosis 1AZ");
-            let cantidadAplicar = Math.min(Math.floor(CMDPD() * PAPD_1AZ), ST_1AZ);
-            ST_1AZ -= cantidadAplicar; // Resto stock
+            debug("Aplicacion dosis 1AZ");
+            let cantidadAplicar = Math.min(Math.floor(CMDPD() * PAPD_1AZ), ST_AZ);
+            ST_AZ -= cantidadAplicar; // Resto stock
             CGV_1AZ += cantidadAplicar; // Sumo cantidad de gente vacunada
 
             // EFC: Aplicacion dosis 1AZ
-            if (ST_1AZ > 0) {
+            if (ST_AZ > 0) {
                 TPA_1AZ = T + 1;
             } else {
                 TPA_1AZ = HV;
@@ -299,32 +278,32 @@ do {
             break;
         }
         case minTPA_2AZ: { // Aplicacion dosis 2AZ
-            console.log("Aplicacion dosis 2AZ");
+            debug("Aplicacion dosis 2AZ");
             let cantidadAplicar = TPA_2AZ[0].cant;
             let aDiferir = 0;
-            if (cantidadAplicar > ST_2AZ) {
-                aDiferir = cantidadAplicar - ST_2AZ;
-                cantidadAplicar = ST_2AZ;
+            if (cantidadAplicar > ST_AZ) {
+                aDiferir = cantidadAplicar - ST_AZ;
+                cantidadAplicar = ST_AZ;
             }
-            ST_2AZ -= cantidadAplicar; // Resto stock
+            ST_AZ -= cantidadAplicar; // Resto stock
             CGV_2AZ += cantidadAplicar; // Sumo cantidad de gente vacunada
 
             // EFC: Aplicacion dosis 2AZ(i)
             TPA_2AZ.shift();
             if (CGV_2AZ > CGV_1AZ && aDiferir > 0) { // TODO esto no esta explicitamente reflejado en el Analisis Previo.
-                TPA_2AZ.push({T: TPLL_2AZ, cant: aDiferir});
+                TPA_2AZ.push({T: TPLL_AZ, cant: aDiferir});
                 TPA_2AZ.sort((a, b) => a.T - b.T);
             }
             break;
         }
         case TPA_1SI: { // Aplicacion dosis 1SI
-            console.log("Aplicacion dosis 1SI");
-            let cantidadAplicar = Math.min(Math.floor(CMDPD() * PAPD_1SI), ST_1SI);
-            ST_1SI -= cantidadAplicar; // Resto stock
+            debug("Aplicacion dosis 1SI");
+            let cantidadAplicar = Math.min(Math.floor(CMDPD() * PAPD_1SI), ST_SI);
+            ST_SI -= cantidadAplicar; // Resto stock
             CGV_1SI += cantidadAplicar; // Sumo cantidad de gente vacunada
 
             // EFC: Aplicacion dosis 1SI
-            if (ST_1SI > 0) {
+            if (ST_SI > 0) {
                 TPA_1SI = T + 1;
             } else {
                 TPA_1SI = HV;
@@ -337,20 +316,20 @@ do {
             break;
         }
         case minTPA_2SI: { // Aplicacion dosis 2SI
-            console.log("Aplicacion dosis 2SI");
+            debug("Aplicacion dosis 2SI");
             let cantidadAplicar = TPA_2SI[0].cant;
             let aDiferir = 0;
-            if (cantidadAplicar > ST_2SI) {
-                aDiferir = cantidadAplicar - ST_2SI;
-                cantidadAplicar = ST_2SI;
+            if (cantidadAplicar > ST_SI) {
+                aDiferir = cantidadAplicar - ST_SI;
+                cantidadAplicar = ST_SI;
             }
-            ST_2SI -= cantidadAplicar; // Resto stock
+            ST_SI -= cantidadAplicar; // Resto stock
             CGV_2SI += cantidadAplicar; // Sumo cantidad de gente vacunada
 
             // EFC: Aplicacion dosis 2SI(i)
             TPA_2SI.shift();
             if (CGV_2SI > CGV_1SI && aDiferir > 0) { // TODO esto no esta explicitamente reflejado en el Analisis Previo.
-                TPA_2SI.push({T: TPLL_2SI, cant: aDiferir});
+                TPA_2SI.push({T: TPLL_SI, cant: aDiferir});
                 TPA_2SI.sort((a, b) => a.T - b.T);
             }
             break;
@@ -360,7 +339,7 @@ do {
         // ---- Contagios diarios:
 
         case TPCD: { // Contagios Diarios
-            console.log("Contagios Diarios");
+            debug("Contagios Diarios");
             TPCD = T + 1;
             let nuevosContagiadosPotencial = CIT * FACTOR_R; // TODO deberiamos considerar que los contagios luego de X dias disminuyen cuando se recuperan??
 
@@ -392,24 +371,6 @@ do {
 
 
 console.log("Terminado.");
-
-// TODO borrar esto probablemente y todos los demas logs
-console.log("T:", T);
-
-console.log("ST_1SV:", ST_1SV);
-console.log("ST_2SV:", ST_2SV);
-console.log("ST_1AZ:", ST_1AZ);
-console.log("ST_2AZ:", ST_2AZ);
-console.log("ST_1SI:", ST_1SI);
-console.log("ST_2SI:", ST_2SI);
-console.log("CGV_1SV:", CGV_1SV);
-console.log("CGV_2SV:", CGV_2SV);
-console.log("CGV_1AZ:", CGV_1AZ);
-console.log("CGV_2AZ:", CGV_2AZ);
-console.log("CGV_1SI:", CGV_1SI);
-console.log("CGV_2SI:", CGV_2SI);
-
-//------
 
 console.log("----------------------------------");
 console.log("Resultados para:");
