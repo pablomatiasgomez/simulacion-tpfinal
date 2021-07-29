@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const DEBUG = true;
+const DEBUG = false;
 
 function debug() {
     if (!DEBUG) return;
@@ -14,7 +14,7 @@ const HV = Number.MAX_SAFE_INTEGER;
 const IAD_SV = 90; // Intervalo entre aplicacion de primer y segunda dosis SV
 const IAD_AZ = 56; // Intervalo entre aplicacion de primer y segunda dosis AZ
 const IAD_SI = 21; // Intervalo entre aplicacion de primer y segunda dosis SI
-const FACTOR_R = 0.5; // Cantidad de gente que tiene contacto estrecho con contagiados y son posbiles nuevos contagiados.
+const FACTOR_R = 0.2; // Cantidad de gente que tiene contacto estrecho con contagiados y son posbiles nuevos contagiados.
 const POBLACION = 45000000;
 const EF_1SV = 0.7; // Efectividad de la primera dosis de SV de no contraer la enfermedad
 const EF_2SV = 0.8; // Efectividad de la segunda dosis de SV de no contraer la enfermedad
@@ -23,19 +23,19 @@ const EF_2AZ = 0.8; // Efectividad de la segunda dosis de AZ de no contraer la e
 const EF_1SI = 0.7; // Efectividad de la primera dosis de SI de no contraer la enfermedad
 const EF_2SI = 0.8; // Efectividad de la segunda dosis de SI de no contraer la enfermedad
 const EF_NV = 0.1; // "Efectividad" (probabilidad) de no contraer la enfermedad al ser contracto estrecho
-
+const DIAS_CONTAGIOSO = 10; // Cantidad de dias para considerar a una persona conatagiada (y que contagia a otros)
 
 // ------- Variables -------
 
 // -- Control: --
 
 // TODO armar scnearios
-const PAPD_1SV = 1 / 6; // Porcentaje a aplicar por día de primera dosis de vacuna SV
-const PAPD_2SV = 1 / 6; // Porcentaje a aplicar por día de segunda dosis de vacuna SV // TODO tal vez esto no sea necesario? en realidad hay que ver porque tenemos unlimite...
-const PAPD_1AZ = 1 / 6; // Porcentaje a aplicar por día de primera dosis de vacuna AZ
-const PAPD_2AZ = 1 / 6; // Porcentaje a aplicar por día de segunda dosis de vacuna AZ // TODO tal vez esto no sea necesario?
-const PAPD_1SI = 1 / 6; // Porcentaje a aplicar por día de primera dosis de vacuna SI
-const PAPD_2SI = 1 / 6; // Porcentaje a aplicar por día de segunda dosis de vacuna SI // TODO tal vez esto no sea necesario?
+const PAPD_1SV = 0.3; // Porcentaje a aplicar por día de primera dosis de vacuna SV
+const PAPD_2SV = 0.3; // Porcentaje a aplicar por día de segunda dosis de vacuna SV // TODO tal vez esto no sea necesario? en realidad hay que ver porque tenemos unlimite...
+const PAPD_1AZ = 0.07; // Porcentaje a aplicar por día de primera dosis de vacuna AZ
+const PAPD_2AZ = 0.07; // Porcentaje a aplicar por día de segunda dosis de vacuna AZ // TODO tal vez esto no sea necesario?
+const PAPD_1SI = 0.13; // Porcentaje a aplicar por día de primera dosis de vacuna SI
+const PAPD_2SI = 0.13; // Porcentaje a aplicar por día de segunda dosis de vacuna SI // TODO tal vez esto no sea necesario?
 
 if ((PAPD_1SV + PAPD_2SV + PAPD_1AZ + PAPD_2AZ + PAPD_1SI + PAPD_2SI).toFixed(4) !== "1.0000") {
     throw "Configuracion invalida, la sumatoria de porcentajes a aplicar debe ser 1.";
@@ -48,58 +48,59 @@ if ((PAPD_1SV + PAPD_2SV + PAPD_1AZ + PAPD_2AZ + PAPD_1SI + PAPD_2SI).toFixed(4)
 function IA_1SV() {
     let R = Math.random();
     // f(R) = 2.0113/((1/R-1)^(1/7.0000))+7.0000
-    return Math.round(2.0113 / ((1 / R - 1) ** (1 / 7)) + 7);
+    return Math.ceil(2.0113 / ((1 / R - 1) ** (1 / 7)) + 7);
 }
 
 // Intervalo entre arrivos de stock de segunda dosis de vacuna SV
 function IA_2SV() {
     let R = Math.random();
     // f(R) = R*(50.0000-2.0000)+2.0000
-    return Math.round(R * (50 - 2) + 2);
+    return Math.ceil(R * (50 - 2) + 2);
 }
 
 // Intervalo entre arrivos de stock de dosis de vacuna AZ
 function IA_AZ() {
     let R = Math.random();
     // f(R) = 2.0046/((1/R-1)^(1/7.0000))+7.0000
-    return Math.round(2.0046 / ((1 / R - 1) ** (1 / 7)) + 7);
+    return Math.ceil(2.0046 / ((1 / R - 1) ** (1 / 7)) + 7);
 }
 
 // Intervalo entre arrivos de stock de dosis de vacuna SI
 function IA_SI() {
-    // TODO buscar fdp
-    return 15;
+    let R = Math.random();
+    // f(R) = ln(-R+1)/(-0.0956)
+    return Math.ceil(Math.log(-R + 1) / (-0.0956));
 }
 
 
 // Cantidad de dosis recibidas de primera dosis de vacuna SV cada IA_1SV días
 function CDR_1SV() {
     // TODO buscar fdp
-    return 1;
+    return 10000;
 }
 
 // Cantidad de dosis recibidas de segunda dosis de vacuna SV cada IA_2SV días
 function CDR_2SV() {
     // TODO buscar fdp
-    return 1;
+    return 100000;
 }
 
 // Cantidad de dosis recibidas de vacuna AZ cada IA_AZ días
 function CDR_AZ() {
     // TODO buscar fdp
-    return 1;
+    return 100000;
 }
 
 // Cantidad de dosis recibidas de vacuna SI cada IA_SI días
 function CDR_SI() {
     // TODO buscar fdp
-    return 1;
+    return 100000;
 }
 
 // Cantidad máxima de dosis a aplicar por día
 function CMDPD() {
     // TODO buscar fdp
-    return 4000;
+    return 400000;
 }
 
 // -- Estado: --
@@ -114,10 +115,11 @@ let CGV_1AZ = 0;    // Cantidad de gente vacunada con la primera dosis dosis de 
 let CGV_2AZ = 0;    // Cantidad de gente vacunada con la segunda dosis dosis de la vacuna AZ
 let CGV_1SI = 0;    // Cantidad de gente vacunada con la primera dosis dosis de la vacuna SI
 let CGV_2SI = 0;    // Cantidad de gente vacunada con la segunda dosis dosis de la vacuna SI
+let CI = 10000;     // Cantidad de infectados (con valor inicial por que multiplicamos a partir de esta base)
 
 // -- Resultado --
 
-let CIT = 10000;    // Cantidad de infectados total
+let CIT = 0;        // Cantidad de infectados total
 let CAL = 0;        // Costo de almacenamiento
 
 // --------------------------
@@ -134,44 +136,44 @@ let TPA_1SI = HV; // Tiempo próxima aplicación primera dosis de la vacuna SI
 let TPA_2SV = []; // Tiempo próxima aplicación segunda dosis de la vacuna SI
 let TPA_2AZ = []; // Tiempo próxima aplicación segunda dosis de la vacuna AZ
 let TPA_2SI = []; // Tiempo próxima aplicación segunda dosis de la vacuna SI
-
-let TPCD = 0; // Tiempo de proximos contagios diarios.
+let TPCC = [];    // Tiempo próxima curacion de contagiados
+let TPC = 0; // Tiempo de proximos contagios diarios.
 
 // ---
 
-const TF = 500;
+const TF = 3000;
 let T = 0;
 
 
 do {
-    //console.clear();
+    DEBUG || console.clear();
     console.log(`Avance: ${(T * 100 / TF).toFixed(2)}%`);
 
     // Determinacion del instante T en que ocurrira el proximo evento
     let minTPA_2SV = TPA_2SV.length > 0 ? TPA_2SV[0].T : HV; // No need to sort cause array is already sorted by T.
     let minTPA_2AZ = TPA_2AZ.length > 0 ? TPA_2AZ[0].T : HV; // No need to sort cause array is already sorted by T.
     let minTPA_2SI = TPA_2SI.length > 0 ? TPA_2SI[0].T : HV; // No need to sort cause array is already sorted by T.
+    let minTPCC = TPCC.length > 0 ? TPCC[0].T : HV; // No need to sort cause array is already sorted by T.
     let nextT = Math.min(
         TPLL_1SV, TPLL_2SV, TPLL_AZ, TPLL_SI,
         TPA_1SV, TPA_1AZ, TPA_1SI, minTPA_2SV, minTPA_2AZ, minTPA_2SI,
-        TPCD);
+        TPC, minTPCC);
 
     // Avance del Tiempo hasta ese instante T
     T = nextT;
 
     // Log de TEF:
-    debug("---- TEF: ----- ", "T:", T);
+    debug("---- TEF: ----- ", `T/TF: ${T}/${TF}`);
     debug("TPLL_1SV:", TPLL_1SV, "TPLL_2SV:", TPLL_2SV, "TPLL_AZ:", TPLL_AZ, "TPLL_SI:", TPLL_SI,);
     debug("TPA_1SV:", TPA_1SV, "TPA_1AZ:", TPA_1AZ, "TPA_1SI:", TPA_1SI, "minTPA_2SV:", minTPA_2SV, "minTPA_2AZ:", minTPA_2AZ, "minTPA_2SI:", minTPA_2SI);
-    debug("TPCD:", TPCD);
+    debug("TPC:", TPC);
     // Log de estado:
-    debug("---- Estado: ----- ", "T:", T);
-    debug("T:", T);
+    debug("---- Estado: ----- ", `T/TF: ${T}/${TF}`);
     debug("ST_1SV:", ST_1SV, "ST_2SV:", ST_2SV, "ST_AZ:", ST_AZ, "ST_SI:", ST_SI);
     debug("CGV_1SV:", CGV_1SV, "CGV_2SV:", CGV_2SV);
     debug("CGV_1AZ:", CGV_1AZ, "CGV_2AZ:", CGV_2AZ);
     debug("CGV_1SI:", CGV_1SI, "CGV_2SI:", CGV_2SI);
-    debug("CIT:", CIT, "CAL:", CAL);
+    debug("CI:", CI, "CIT:", CIT, "CAL:", CAL);
 
 
     // Determinacion del tipo de evento que ocurre en el instante T
@@ -338,10 +340,10 @@ do {
 
         // ---- Contagios diarios:
 
-        case TPCD: { // Contagios Diarios
+        case TPC: { // Contagios Diarios
             debug("Contagios Diarios");
-            TPCD = T + 1;
-            let nuevosContagiadosPotencial = CIT * FACTOR_R; // TODO deberiamos considerar que los contagios luego de X dias disminuyen cuando se recuperan??
+            TPC = T + 1;
+            let nuevosContagiadosPotencial = CI * FACTOR_R;
 
             let vacunados1SV = CGV_1SV / POBLACION * nuevosContagiadosPotencial;
             let vacunados2SV = CGV_2SV / POBLACION * nuevosContagiadosPotencial;
@@ -351,16 +353,29 @@ do {
             let vacunados2SI = CGV_2SI / POBLACION * nuevosContagiadosPotencial;
             let noVacunados = nuevosContagiadosPotencial - vacunados1SV - vacunados2SV - vacunados1AZ - vacunados2AZ - vacunados1SI - vacunados2SI;
 
-            let nuevosContagiados =
+            let nuevosContagiados = Math.floor(
                 vacunados1SV * (1 - EF_1SV) +
                 vacunados2SV * (1 - EF_2SV) +
                 vacunados1AZ * (1 - EF_1AZ) +
                 vacunados2AZ * (1 - EF_2AZ) +
                 vacunados1SI * (1 - EF_1SI) +
                 vacunados2SI * (1 - EF_2SI) +
-                noVacunados * (1 - EF_NV);
+                noVacunados * (1 - EF_NV));
 
+            CI += nuevosContagiados;
             CIT += nuevosContagiados;
+
+            // EFC: Curacion Contagiados
+            if (CI > 0 && nuevosContagiados > 0) {
+                TPCC.push({T: T + DIAS_CONTAGIOSO, cant: nuevosContagiados});
+            }
+            break;
+        }
+        case minTPCC: { // Curacion Contagiados
+            debug("Curacion Contagiados");
+            let cantidadRecuperados = TPCC[0].cant;
+            CI -= cantidadRecuperados;
+            TPCC.shift();
             break;
         }
 
@@ -369,6 +384,14 @@ do {
     }
 } while (T < TF);
 
+
+// TODO borrar?
+console.log("---- Estado: ----- ", `T/TF: ${T}/${TF}`);
+console.log("ST_1SV:", ST_1SV, "ST_2SV:", ST_2SV, "ST_AZ:", ST_AZ, "ST_SI:", ST_SI);
+console.log("CGV_1SV:", CGV_1SV, "CGV_2SV:", CGV_2SV);
+console.log("CGV_1AZ:", CGV_1AZ, "CGV_2AZ:", CGV_2AZ);
+console.log("CGV_1SI:", CGV_1SI, "CGV_2SI:", CGV_2SI);
+console.log("CI:", CI, "CIT:", CIT, "CAL:", CAL);
 
 console.log("Terminado.");
 
