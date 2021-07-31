@@ -75,32 +75,37 @@ function IA_SI() {
 
 // Cantidad de dosis recibidas de primera dosis de vacuna SV cada IA_1SV días
 function CDR_1SV() {
-    // TODO buscar fdp
-    return 10000;
+    let R = Math.random();
+    // Logistic(1.1425E+5; 2.8748E+5)
+    return Math.max(0, Math.ceil(287480 - 114250 * Math.log(1 / R - 1)));
 }
 
 // Cantidad de dosis recibidas de segunda dosis de vacuna SV cada IA_2SV días
 function CDR_2SV() {
-    // TODO buscar fdp
-    return 100000;
+    let R = Math.random();
+    // Dagum(0.10907; 5.8144; 4.6462E+5)
+    return Math.max(0, Math.ceil(((R ** (-1 / 0.10907) - 1) ** (-1 / 5.8144)) * 464620));
 }
 
 // Cantidad de dosis recibidas de vacuna AZ cada IA_AZ días
 function CDR_AZ() {
-    // TODO buscar fdp
-    return 100000;
+    let R = Math.random();
+    // Cauchy(2.0303E+5; 8.3071E+5)
+    return Math.max(0, Math.ceil(Math.tan((R - 0.5) * Math.PI) * 203035 + 830710));
 }
 
 // Cantidad de dosis recibidas de vacuna SI cada IA_SI días
 function CDR_SI() {
-    // TODO buscar fdp
-    return 100000;
+    let R = Math.random();
+    // GumbelMin(2.3469E+5; 8.1580E+5)
+    return Math.max(0, Math.ceil(234690 * Math.log(-Math.log(1 - R)) + 815800));
 }
 
 // Cantidad máxima de dosis a aplicar por día
 function CMDPD() {
-    // TODO buscar fdp
-    return 400000;
+    let R = Math.random();
+    // PowerFunc(0.50618; 121.0; 4.1374E+5)
+    return Math.ceil((413740 - 121) * R ** (1 / 0.50618) + 121);
 }
 
 // -- Estado: --
@@ -136,12 +141,12 @@ let TPA_1SI = HV; // Tiempo próxima aplicación primera dosis de la vacuna SI
 let TPA_2SV = []; // Tiempo próxima aplicación segunda dosis de la vacuna SI
 let TPA_2AZ = []; // Tiempo próxima aplicación segunda dosis de la vacuna AZ
 let TPA_2SI = []; // Tiempo próxima aplicación segunda dosis de la vacuna SI
-let TPCC = [];    // Tiempo próxima curacion de contagiados
+let TPCC = [{T: DIAS_CONTAGIOSO, cant: CI}]; // Tiempo próxima curacion de contagiados
 let TPC = 0; // Tiempo de proximos contagios diarios.
 
 // ---
 
-const TF = 3000;
+const TF = 500;
 let T = 0;
 
 
