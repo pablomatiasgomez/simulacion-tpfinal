@@ -10,19 +10,18 @@ function debug() {
 const HV = Number.MAX_SAFE_INTEGER;
 
 // constantes:
-// TODO buscar todoooos estos valores.
-const IAD_SV = 90; // Intervalo entre aplicacion de primer y segunda dosis SV
-const IAD_AZ = 56; // Intervalo entre aplicacion de primer y segunda dosis AZ
+const IAD_SV = 21; // Intervalo entre aplicacion de primer y segunda dosis SV
+const IAD_AZ = 28; // Intervalo entre aplicacion de primer y segunda dosis AZ
 const IAD_SI = 21; // Intervalo entre aplicacion de primer y segunda dosis SI
-const FACTOR_R = 0.2; // Cantidad de gente que tiene contacto estrecho con contagiados y son posbiles nuevos contagiados.
-const POBLACION = 45000000;
-const EF_1SV = 0.7; // Efectividad de la primera dosis de SV de no contraer la enfermedad
-const EF_2SV = 0.8; // Efectividad de la segunda dosis de SV de no contraer la enfermedad
-const EF_1AZ = 0.7; // Efectividad de la primera dosis de AZ de no contraer la enfermedad
-const EF_2AZ = 0.8; // Efectividad de la segunda dosis de AZ de no contraer la enfermedad
-const EF_1SI = 0.7; // Efectividad de la primera dosis de SI de no contraer la enfermedad
-const EF_2SI = 0.8; // Efectividad de la segunda dosis de SI de no contraer la enfermedad
-const EF_NV = 0.1; // "Efectividad" (probabilidad) de no contraer la enfermedad al ser contracto estrecho
+const FACTOR_CONTACTO_ESTRECHO = 0.2; // Cantidad de gente que tiene contacto estrecho con contagiados y son posbiles nuevos contagiados.
+const POBLACION = 45000000; // TODO
+const EF_1SV = 0.740; // Efectividad de la primera dosis de SV de no contraer la enfermedad
+const EF_2SV = 0.933; // Efectividad de la segunda dosis de SV de no contraer la enfermedad
+const EF_1AZ = 0.795; // Efectividad de la primera dosis de AZ de no contraer la enfermedad
+const EF_2AZ = 0.888; // Efectividad de la segunda dosis de AZ de no contraer la enfermedad
+const EF_1SI = 0.616; // Efectividad de la primera dosis de SI de no contraer la enfermedad
+const EF_2SI = 0.840; // Efectividad de la segunda dosis de SI de no contraer la enfermedad
+const EF_NV = 0.125; // "Efectividad" (probabilidad) de no contraer la enfermedad al ser contracto estrecho
 const DIAS_CONTAGIOSO = 10; // Cantidad de dias para considerar a una persona conatagiada (y que contagia a otros)
 
 // ------- Variables -------
@@ -31,11 +30,11 @@ const DIAS_CONTAGIOSO = 10; // Cantidad de dias para considerar a una persona co
 
 // TODO armar scnearios
 const PAPD_1SV = 0.3; // Porcentaje a aplicar por día de primera dosis de vacuna SV
-const PAPD_2SV = 0.3; // Porcentaje a aplicar por día de segunda dosis de vacuna SV // TODO tal vez esto no sea necesario? en realidad hay que ver porque tenemos unlimite...
+const PAPD_2SV = 0.3; // Porcentaje a aplicar por día de segunda dosis de vacuna SV
 const PAPD_1AZ = 0.07; // Porcentaje a aplicar por día de primera dosis de vacuna AZ
-const PAPD_2AZ = 0.07; // Porcentaje a aplicar por día de segunda dosis de vacuna AZ // TODO tal vez esto no sea necesario?
+const PAPD_2AZ = 0.07; // Porcentaje a aplicar por día de segunda dosis de vacuna AZ
 const PAPD_1SI = 0.13; // Porcentaje a aplicar por día de primera dosis de vacuna SI
-const PAPD_2SI = 0.13; // Porcentaje a aplicar por día de segunda dosis de vacuna SI // TODO tal vez esto no sea necesario?
+const PAPD_2SI = 0.13; // Porcentaje a aplicar por día de segunda dosis de vacuna SI
 
 if ((PAPD_1SV + PAPD_2SV + PAPD_1AZ + PAPD_2AZ + PAPD_1SI + PAPD_2SI).toFixed(4) !== "1.0000") {
     throw "Configuracion invalida, la sumatoria de porcentajes a aplicar debe ser 1.";
@@ -248,11 +247,10 @@ do {
         }
         case minTPA_2SV: { // Aplicacion dosis 2SV
             debug("Aplicacion dosis 2SV");
-            let cantidadAplicar = TPA_2SV[0].cant;
+            let cantidadAplicar = Math.min(TPA_2SV[0].cant, Math.floor(CMDPD() * PAPD_2SV), ST_2SV);
             let aDiferir = 0;
-            if (cantidadAplicar > ST_2SV) {
-                aDiferir = cantidadAplicar - ST_2SV;
-                cantidadAplicar = ST_2SV;
+            if (cantidadAplicar < TPA_2SV[0].cant) {
+                aDiferir = TPA_2SV[0].cant - cantidadAplicar;
             }
             ST_2SV -= cantidadAplicar; // Resto stock
             CGV_2SV += cantidadAplicar; // Sumo cantidad de gente vacunada
@@ -286,11 +284,10 @@ do {
         }
         case minTPA_2AZ: { // Aplicacion dosis 2AZ
             debug("Aplicacion dosis 2AZ");
-            let cantidadAplicar = TPA_2AZ[0].cant;
+            let cantidadAplicar = Math.min(TPA_2AZ[0].cant, Math.floor(CMDPD() * PAPD_2AZ), ST_AZ);
             let aDiferir = 0;
-            if (cantidadAplicar > ST_AZ) {
-                aDiferir = cantidadAplicar - ST_AZ;
-                cantidadAplicar = ST_AZ;
+            if (cantidadAplicar < TPA_2AZ[0].cant) {
+                aDiferir = TPA_2AZ[0].cant - cantidadAplicar;
             }
             ST_AZ -= cantidadAplicar; // Resto stock
             CGV_2AZ += cantidadAplicar; // Sumo cantidad de gente vacunada
@@ -324,11 +321,10 @@ do {
         }
         case minTPA_2SI: { // Aplicacion dosis 2SI
             debug("Aplicacion dosis 2SI");
-            let cantidadAplicar = TPA_2SI[0].cant;
+            let cantidadAplicar = Math.min(TPA_2SI[0].cant, Math.floor(CMDPD() * PAPD_2SI), ST_SI);
             let aDiferir = 0;
-            if (cantidadAplicar > ST_SI) {
-                aDiferir = cantidadAplicar - ST_SI;
-                cantidadAplicar = ST_SI;
+            if (cantidadAplicar < TPA_2SI[0].cant) {
+                aDiferir = TPA_2SI[0].cant - cantidadAplicar;
             }
             ST_SI -= cantidadAplicar; // Resto stock
             CGV_2SI += cantidadAplicar; // Sumo cantidad de gente vacunada
@@ -348,7 +344,7 @@ do {
         case TPC: { // Contagios Diarios
             debug("Contagios Diarios");
             TPC = T + 1;
-            let nuevosContagiadosPotencial = CI * FACTOR_R;
+            let nuevosContagiadosPotencial = CI * FACTOR_CONTACTO_ESTRECHO;
 
             let vacunados1SV = CGV_1SV / POBLACION * nuevosContagiadosPotencial;
             let vacunados2SV = CGV_2SV / POBLACION * nuevosContagiadosPotencial;
