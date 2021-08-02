@@ -13,31 +13,58 @@ const HV = Number.MAX_SAFE_INTEGER;
 const IAD_SV = 21; // Intervalo entre aplicacion de primer y segunda dosis SV
 const IAD_AZ = 28; // Intervalo entre aplicacion de primer y segunda dosis AZ
 const IAD_SI = 21; // Intervalo entre aplicacion de primer y segunda dosis SI
-const FACTOR_CONTACTO_ESTRECHO = 0.18; // Cantidad de gente que tiene contacto estrecho con contagiados y son posbiles nuevos contagiados.
-const POBLACION = 450_000_000; // TODO
+const FACTOR_CONTACTO_ESTRECHO = 0.165; // Cantidad de gente que tiene contacto estrecho con contagiados y son posbiles nuevos contagiados.
 const EF_1SV = 0.740; // Efectividad de la primera dosis de SV de no contraer la enfermedad
 const EF_2SV = 0.933; // Efectividad de la segunda dosis de SV de no contraer la enfermedad
 const EF_1AZ = 0.795; // Efectividad de la primera dosis de AZ de no contraer la enfermedad
 const EF_2AZ = 0.888; // Efectividad de la segunda dosis de AZ de no contraer la enfermedad
 const EF_1SI = 0.616; // Efectividad de la primera dosis de SI de no contraer la enfermedad
 const EF_2SI = 0.840; // Efectividad de la segunda dosis de SI de no contraer la enfermedad
-const EF_NV = 0.25; // "Efectividad" (probabilidad) de no contraer la enfermedad al ser contracto estrecho
+const EF_NV = 0.35; // "Efectividad" (probabilidad) de no contraer la enfermedad al ser contracto estrecho
 const DIAS_CONTAGIOSO = 10; // Cantidad de dias para considerar a una persona conatagiada (y que contagia a otros)
-const CAL_SV = 0.001; // TODO
-const CAL_AZ = 0.001;
-const CAL_SI = 0.001;
+const POBLACION = 450_000_000; // Numero de poblacion de la simulacion para estimar cuanta gente esta vacunada. Como usamos un TF alto, necesitamos una poblacion alta para iterar muchas veces.
+const CAL_SV = 0.0001; // Costo de almacenamiento de la vacuna SV
+const CAL_AZ = 0.0001; // Costo de almacenamiento de la vacuna AZ
+const CAL_SI = 0.0001; // Costo de almacenamiento de la vacuna SI
 
 // ------- Variables -------
 
 // -- Control: --
 
-// TODO armar scnearios
-const PAPD_1SV = 0.25; // Porcentaje a aplicar por día de primera dosis de vacuna SV
-const PAPD_2SV = 0.25; // Porcentaje a aplicar por día de segunda dosis de vacuna SV
-const PAPD_1AZ = 0.10; // Porcentaje a aplicar por día de primera dosis de vacuna AZ
-const PAPD_2AZ = 0.10; // Porcentaje a aplicar por día de segunda dosis de vacuna AZ
-const PAPD_1SI = 0.15; // Porcentaje a aplicar por día de primera dosis de vacuna SI
-const PAPD_2SI = 0.15; // Porcentaje a aplicar por día de segunda dosis de vacuna SI
+let PAPD_1SV; // Porcentaje a aplicar por día de primera dosis de vacuna SV
+let PAPD_2SV; // Porcentaje a aplicar por día de segunda dosis de vacuna SV
+let PAPD_1AZ; // Porcentaje a aplicar por día de primera dosis de vacuna AZ
+let PAPD_2AZ; // Porcentaje a aplicar por día de segunda dosis de vacuna AZ
+let PAPD_1SI; // Porcentaje a aplicar por día de primera dosis de vacuna SI
+let PAPD_2SI; // Porcentaje a aplicar por día de segunda dosis de vacuna SI
+
+const escenario = 1; // Cambiar entre 1, 2 y 3 para correr diferentes escenarios.
+switch (escenario) {
+    case 1: // Escenario 1: 33% cada tipo de vacuna:
+        PAPD_1SV = 1 / 6;
+        PAPD_2SV = 1 / 6;
+        PAPD_1AZ = 1 / 6;
+        PAPD_2AZ = 1 / 6;
+        PAPD_1SI = 1 / 6;
+        PAPD_2SI = 1 / 6;
+        break;
+    case 2: // Escenario 1: 33% para primer dosis de sputnik V, igual porcentaje para el resto:
+        PAPD_1SV = 1 / 3;
+        PAPD_2SV = 2 / 3 / 5;
+        PAPD_1AZ = 2 / 3 / 5;
+        PAPD_2AZ = 2 / 3 / 5;
+        PAPD_1SI = 2 / 3 / 5;
+        PAPD_2SI = 2 / 3 / 5;
+        break;
+    case 3: // Escenario 3:
+        PAPD_1SV = 0.20;
+        PAPD_2SV = 0;
+        PAPD_1AZ = 0.45;
+        PAPD_2AZ = 0;
+        PAPD_1SI = 0.35;
+        PAPD_2SI = 0;
+        break;
+}
 
 if ((PAPD_1SV + PAPD_2SV + PAPD_1AZ + PAPD_2AZ + PAPD_1SI + PAPD_2SI).toFixed(4) !== "1.0000") {
     throw "Configuracion invalida, la sumatoria de porcentajes a aplicar debe ser 1.";
@@ -122,7 +149,7 @@ let CGV_1AZ = 0;    // Cantidad de gente vacunada con la primera dosis dosis de 
 let CGV_2AZ = 0;    // Cantidad de gente vacunada con la segunda dosis dosis de la vacuna AZ
 let CGV_1SI = 0;    // Cantidad de gente vacunada con la primera dosis dosis de la vacuna SI
 let CGV_2SI = 0;    // Cantidad de gente vacunada con la segunda dosis dosis de la vacuna SI
-let CI = 1000;     // Cantidad de infectados (con valor inicial por que multiplicamos a partir de esta base)
+let CI = 100000;    // Cantidad de infectados (con valor inicial por que multiplicamos a partir de esta base)
 
 // -- Resultado --
 
@@ -148,7 +175,7 @@ let TPC = 0; // Tiempo de proximos contagios diarios.
 
 // ---
 
-const TF = 5000;
+const TF = 50000;
 let T = 0;
 let ITA_1SV = 0; // Inicio tiempo almacenamiento de primera dosis de la vacuna SV
 let ITA_2SV = 0; // Inicio tiempo almacenamiento de segunda dosis de la vacuna SV
@@ -205,7 +232,7 @@ do {
             break;
         }
         case TPLL_2SV: { // Llegada stock dosis 2SV
-            CAL += ST_2SV * (T - ITA_2SV);
+            CAL += ST_2SV * CAL_SV * (T - ITA_2SV);
             ITA_2SV = T;
 
             debug("Llegada stock dosis 2SV");
@@ -268,7 +295,7 @@ do {
         }
         case minTPA_2SV: { // Aplicacion dosis 2SV
             debug("Aplicacion dosis 2SV");
-            CAL += ST_2SV * (T - ITA_2SV);
+            CAL += ST_2SV * CAL_SV * (T - ITA_2SV);
             ITA_2SV = T;
 
             let cantidadAplicar = Math.min(TPA_2SV[0].cant, Math.floor(CMDPD() * PAPD_2SV), ST_2SV);
@@ -380,7 +407,7 @@ do {
         case TPC: { // Contagios Diarios
             debug("Contagios Diarios");
             TPC = T + 1;
-            let nuevosContagiadosPotencial = CI * FACTOR_CONTACTO_ESTRECHO;
+            let nuevosContagiadosPotencial = Math.min(CI * FACTOR_CONTACTO_ESTRECHO, POBLACION - CI);
 
             let vacunados1SV = CGV_1SV / POBLACION * nuevosContagiadosPotencial;
             let vacunados2SV = CGV_2SV / POBLACION * nuevosContagiadosPotencial;
@@ -441,6 +468,6 @@ console.log("Porcentaje a aplicar por día de segunda dosis de vacuna AZ (PAPD_2
 console.log("Porcentaje a aplicar por día de primera dosis de vacuna SI (PAPD_1SI):", (PAPD_1SI * 100).toFixed(2) + "%");
 console.log("Porcentaje a aplicar por día de segunda dosis de vacuna SI (PAPD_2SI):", (PAPD_2SI * 100).toFixed(2) + "%");
 console.log("--");
-console.log("Porcentaje de infectados total (CIT):", (CIT * 100 / POBLACION).toFixed(2) + "%");
-console.log("Costo de almacenamiento (CAL):", CAL);
+console.log("Porcentaje de infectados total:", (CIT * 100 / POBLACION).toFixed(2) + "%");
+console.log("Costo de almacenamiento diario promedio:", (CAL / TF).toLocaleString("es-AR"));
 console.log("----------------------------------");
