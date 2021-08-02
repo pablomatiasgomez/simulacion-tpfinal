@@ -10,8 +10,8 @@ function debug() {
 const HV = Number.MAX_SAFE_INTEGER;
 
 // constantes:
-const IAD_SV = 21; // Intervalo entre aplicacion de primer y segunda dosis SV
-const IAD_AZ = 28; // Intervalo entre aplicacion de primer y segunda dosis AZ
+const IAD_SV = 90; // Intervalo entre aplicacion de primer y segunda dosis SV
+const IAD_AZ = 56; // Intervalo entre aplicacion de primer y segunda dosis AZ
 const IAD_SI = 21; // Intervalo entre aplicacion de primer y segunda dosis SI
 const FACTOR_CONTACTO_ESTRECHO = 0.165; // Cantidad de gente que tiene contacto estrecho con contagiados y son posbiles nuevos contagiados.
 const EF_1SV = 0.740; // Efectividad (probabilidad) de la primera dosis de SV de no contraer la enfermedad
@@ -311,8 +311,7 @@ do {
             // EFC: Aplicacion dosis 2SV(i)
             TPA_2SV.shift();
             if (CGV_1SV > CGV_2SV && aDiferir > 0) {
-                TPA_2SV.push({T: TPLL_2SV, cant: aDiferir});
-                TPA_2SV.sort((a, b) => a.T - b.T);
+                insertToSortedArray(TPA_2SV, {T: TPLL_2SV, cant: aDiferir})
             }
             break;
         }
@@ -354,8 +353,7 @@ do {
             // EFC: Aplicacion dosis 2AZ(i)
             TPA_2AZ.shift();
             if (CGV_1AZ > CGV_2AZ && aDiferir > 0) {
-                TPA_2AZ.push({T: TPLL_AZ, cant: aDiferir});
-                TPA_2AZ.sort((a, b) => a.T - b.T);
+                insertToSortedArray(TPA_2AZ, {T: TPLL_AZ, cant: aDiferir})
             }
             break;
         }
@@ -397,8 +395,7 @@ do {
             // EFC: Aplicacion dosis 2SI(i)
             TPA_2SI.shift();
             if (CGV_1SI > CGV_2SI && aDiferir > 0) {
-                TPA_2SI.push({T: TPLL_SI, cant: aDiferir});
-                TPA_2SI.sort((a, b) => a.T - b.T);
+                insertToSortedArray(TPA_2SI, {T: TPLL_SI, cant: aDiferir})
             }
             break;
         }
@@ -449,6 +446,26 @@ do {
             throw "Illegal state!";
     }
 } while (T < TF);
+
+function insertToSortedArray(sortedArray, item) {
+    let low = 0;
+    let high = sortedArray.length;
+    while (low < high) {
+        let mid = (low + high) >>> 1;
+        if (sortedArray[mid].T < item.T) {
+            low = mid + 1;
+        } else {
+            high = mid;
+        }
+    }
+    // Si ya hay un evento futuro con el mismo T, lo sumo al mismo, sino lo agrego.
+    if (sortedArray[low] && sortedArray[low].T === item.T) {
+        sortedArray[low].cant += item.cant;
+    } else {
+        sortedArray.splice(low, 0, item);
+    }
+    return sortedArray;
+}
 
 console.log("Terminado.");
 console.log("---- Estado Final: ----- ", `T/TF: ${T}/${TF}`);
