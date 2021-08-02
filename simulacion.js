@@ -183,8 +183,10 @@ let ITA_AZ = 0; // Inicio tiempo almacenamiento de la vacuna AZ
 let ITA_SI = 0; // Inicio tiempo almacenamiento de la vacuna SI
 
 do {
-    DEBUG || console.clear();
-    console.log(`Avance: ${(T * 100 / TF).toFixed(2)}%`);
+    if ((T * 100 / TF) % 1 === 0) {
+        DEBUG || console.clear();
+        console.log(`Avance: ${(T * 100 / TF).toFixed(2)}%`);
+    }
 
     // Determinacion del instante T en que ocurrira el proximo evento
     let minTPA_2SV = TPA_2SV.length > 0 ? TPA_2SV[0].T : HV; // No need to sort cause array is already sorted by T.
@@ -448,17 +450,13 @@ do {
     }
 } while (T < TF);
 
-
-// TODO borrar?
-console.log("---- Estado: ----- ", `T/TF: ${T}/${TF}`);
+console.log("Terminado.");
+console.log("---- Estado Final: ----- ", `T/TF: ${T}/${TF}`);
 console.log("ST_1SV:", ST_1SV, "ST_2SV:", ST_2SV, "ST_AZ:", ST_AZ, "ST_SI:", ST_SI);
 console.log("CGV_1SV:", CGV_1SV, "CGV_2SV:", CGV_2SV);
 console.log("CGV_1AZ:", CGV_1AZ, "CGV_2AZ:", CGV_2AZ);
 console.log("CGV_1SI:", CGV_1SI, "CGV_2SI:", CGV_2SI);
 console.log("CI:", CI, "CIT:", CIT, "CAL:", CAL);
-
-console.log("Terminado.");
-
 console.log("----------------------------------");
 console.log("Resultados para:");
 console.log("Porcentaje a aplicar por día de primera dosis de vacuna SV (PAPD_1SV):", (PAPD_1SV * 100).toFixed(2) + "%");
