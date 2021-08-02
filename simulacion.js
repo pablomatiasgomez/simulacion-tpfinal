@@ -468,8 +468,8 @@ function insertToSortedArray(sortedArray, item) {
 }
 
 // Resultado:
-let PIT = (CIT * 100 / POBLACION);  // Porcentaje de infectados total
-let CAP = (CAL / TF)                // Costo de almacenamiento diario promedio
+let PIT = CIT * 100 / POBLACION;  // Porcentaje de infectados total
+let CAP = CAL / TF;               // Costo de almacenamiento diario promedio
 
 console.log("Terminado.");
 console.log("---- Estado Final: ----- ", `T/TF: ${T}/${TF}`);
