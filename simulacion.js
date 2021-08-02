@@ -467,6 +467,10 @@ function insertToSortedArray(sortedArray, item) {
     return sortedArray;
 }
 
+// Resultado:
+let PIT = (CIT * 100 / POBLACION);  // Porcentaje de infectados total
+let CAP = (CAL / TF)                // Costo de almacenamiento diario promedio
+
 console.log("Terminado.");
 console.log("---- Estado Final: ----- ", `T/TF: ${T}/${TF}`);
 console.log("ST_1SV:", ST_1SV, "ST_2SV:", ST_2SV, "ST_AZ:", ST_AZ, "ST_SI:", ST_SI);
@@ -483,7 +487,7 @@ console.log("Porcentaje a aplicar por día de segunda dosis de vacuna AZ (PAPD_2
 console.log("Porcentaje a aplicar por día de primera dosis de vacuna SI (PAPD_1SI):", (PAPD_1SI * 100).toFixed(2) + "%");
 console.log("Porcentaje a aplicar por día de segunda dosis de vacuna SI (PAPD_2SI):", (PAPD_2SI * 100).toFixed(2) + "%");
 console.log("----");
-console.log("Porcentaje de infectados total:", (CIT * 100 / POBLACION).toLocaleString("es-AR", {maximumFractionDigits: 2}) + "%");
-console.log("Costo de almacenamiento diario promedio:", (CAL / TF).toLocaleString("es-AR", {maximumFractionDigits: 0}));
+console.log("Porcentaje de infectados total:", PIT.toLocaleString("es-AR", {maximumFractionDigits: 2}) + "%");
+console.log("Costo de almacenamiento diario promedio:", CAP.toLocaleString("es-AR", {maximumFractionDigits: 0}));
 console.log("----------------------------------");
 
