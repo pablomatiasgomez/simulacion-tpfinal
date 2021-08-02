@@ -38,7 +38,7 @@ let PAPD_2AZ; // Porcentaje a aplicar por día de segunda dosis de vacuna AZ
 let PAPD_1SI; // Porcentaje a aplicar por día de primera dosis de vacuna SI
 let PAPD_2SI; // Porcentaje a aplicar por día de segunda dosis de vacuna SI
 
-const escenario = 1; // Cambiar entre 1, 2 y 3 para correr diferentes escenarios.
+const escenario = 3; // Cambiar entre 1, 2 y 3 para correr diferentes escenarios.
 switch (escenario) {
     case 1: // Escenario 1: 33% cada tipo de vacuna:
         PAPD_1SV = 1 / 6;
@@ -56,7 +56,7 @@ switch (escenario) {
         PAPD_1SI = 2 / 3 / 5;
         PAPD_2SI = 2 / 3 / 5;
         break;
-    case 3: // Escenario 3:
+    case 3: // Escenario 3: No aplicar segundas dosis. Solo primer dosis, 20% SV, 45% AZ, 35% SI
         PAPD_1SV = 0.20;
         PAPD_2SV = 0;
         PAPD_1AZ = 0.45;
@@ -310,7 +310,7 @@ do {
 
             // EFC: Aplicacion dosis 2SV(i)
             TPA_2SV.shift();
-            if (CGV_2SV > CGV_1SV && aDiferir > 0) { // TODO esto no esta explicitamente reflejado en el Analisis Previo.
+            if (CGV_2SV > CGV_1SV && aDiferir > 0) {
                 TPA_2SV.push({T: TPLL_2SV, cant: aDiferir});
                 TPA_2SV.sort((a, b) => a.T - b.T);
             }
@@ -353,7 +353,7 @@ do {
 
             // EFC: Aplicacion dosis 2AZ(i)
             TPA_2AZ.shift();
-            if (CGV_2AZ > CGV_1AZ && aDiferir > 0) { // TODO esto no esta explicitamente reflejado en el Analisis Previo.
+            if (CGV_2AZ > CGV_1AZ && aDiferir > 0) {
                 TPA_2AZ.push({T: TPLL_AZ, cant: aDiferir});
                 TPA_2AZ.sort((a, b) => a.T - b.T);
             }
@@ -396,7 +396,7 @@ do {
 
             // EFC: Aplicacion dosis 2SI(i)
             TPA_2SI.shift();
-            if (CGV_2SI > CGV_1SI && aDiferir > 0) { // TODO esto no esta explicitamente reflejado en el Analisis Previo.
+            if (CGV_2SI > CGV_1SI && aDiferir > 0) {
                 TPA_2SI.push({T: TPLL_SI, cant: aDiferir});
                 TPA_2SI.sort((a, b) => a.T - b.T);
             }
@@ -465,7 +465,12 @@ console.log("Porcentaje a aplicar por día de primera dosis de vacuna AZ (PAPD_1
 console.log("Porcentaje a aplicar por día de segunda dosis de vacuna AZ (PAPD_2AZ):", (PAPD_2AZ * 100).toFixed(2) + "%");
 console.log("Porcentaje a aplicar por día de primera dosis de vacuna SI (PAPD_1SI):", (PAPD_1SI * 100).toFixed(2) + "%");
 console.log("Porcentaje a aplicar por día de segunda dosis de vacuna SI (PAPD_2SI):", (PAPD_2SI * 100).toFixed(2) + "%");
-console.log("--");
-console.log("Porcentaje de infectados total:", (CIT * 100 / POBLACION).toFixed(2) + "%");
-console.log("Costo de almacenamiento diario promedio:", (CAL / TF).toLocaleString("es-AR"));
+console.log("----");
+let formattingOptions = {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+};
+console.log("Porcentaje de infectados total:", (CIT * 100 / POBLACION).toLocaleString("es-AR", formattingOptions) + "%");
+console.log("Costo de almacenamiento diario promedio:", (CAL / TF).toLocaleString("es-AR", formattingOptions));
 console.log("----------------------------------");
+
