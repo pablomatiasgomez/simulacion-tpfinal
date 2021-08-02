@@ -14,15 +14,15 @@ const IAD_SV = 21; // Intervalo entre aplicacion de primer y segunda dosis SV
 const IAD_AZ = 28; // Intervalo entre aplicacion de primer y segunda dosis AZ
 const IAD_SI = 21; // Intervalo entre aplicacion de primer y segunda dosis SI
 const FACTOR_CONTACTO_ESTRECHO = 0.165; // Cantidad de gente que tiene contacto estrecho con contagiados y son posbiles nuevos contagiados.
-const EF_1SV = 0.740; // Efectividad de la primera dosis de SV de no contraer la enfermedad
-const EF_2SV = 0.933; // Efectividad de la segunda dosis de SV de no contraer la enfermedad
-const EF_1AZ = 0.795; // Efectividad de la primera dosis de AZ de no contraer la enfermedad
-const EF_2AZ = 0.888; // Efectividad de la segunda dosis de AZ de no contraer la enfermedad
-const EF_1SI = 0.616; // Efectividad de la primera dosis de SI de no contraer la enfermedad
-const EF_2SI = 0.840; // Efectividad de la segunda dosis de SI de no contraer la enfermedad
-const EF_NV = 0.35; // "Efectividad" (probabilidad) de no contraer la enfermedad al ser contracto estrecho
+const EF_1SV = 0.740; // Efectividad (probabilidad) de la primera dosis de SV de no contraer la enfermedad
+const EF_2SV = 0.933; // Efectividad (probabilidad) de la segunda dosis de SV de no contraer la enfermedad
+const EF_1AZ = 0.795; // Efectividad (probabilidad) de la primera dosis de AZ de no contraer la enfermedad
+const EF_2AZ = 0.888; // Efectividad (probabilidad) de la segunda dosis de AZ de no contraer la enfermedad
+const EF_1SI = 0.616; // Efectividad (probabilidad) de la primera dosis de SI de no contraer la enfermedad
+const EF_2SI = 0.840; // Efectividad (probabilidad) de la segunda dosis de SI de no contraer la enfermedad
+const EF_NV = 0.35;   // "Efectividad" (probabilidad) de no contraer la enfermedad al ser contracto estrecho sin estar vacunado
 const DIAS_CONTAGIOSO = 10; // Cantidad de dias para considerar a una persona conatagiada (y que contagia a otros)
-const POBLACION = 450_000_000; // Numero de poblacion de la simulacion para estimar cuanta gente esta vacunada. Como usamos un TF alto, necesitamos una poblacion alta para iterar muchas veces.
+const POBLACION = 450000000; // Numero de poblacion de la simulacion para estimar cuanta gente esta vacunada. Como usamos un TF alto, necesitamos una poblacion alta para iterar muchas veces.
 const CAL_SV = 0.0001; // Costo de almacenamiento de la vacuna SV
 const CAL_AZ = 0.0001; // Costo de almacenamiento de la vacuna AZ
 const CAL_SI = 0.0001; // Costo de almacenamiento de la vacuna SI
@@ -73,28 +73,28 @@ if ((PAPD_1SV + PAPD_2SV + PAPD_1AZ + PAPD_2AZ + PAPD_1SI + PAPD_2SI).toFixed(4)
 
 // -- Datos: --
 
-// Intervalo entre arrivos de stock de primera dosis de vacuna SV
+// Intervalo entre arribos de stock de primera dosis de vacuna SV
 function IA_1SV() {
     let R = Math.random();
     // f(R) = 2.0113/((1/R-1)^(1/7.0000))+7.0000
     return Math.ceil(2.0113 / ((1 / R - 1) ** (1 / 7)) + 7);
 }
 
-// Intervalo entre arrivos de stock de segunda dosis de vacuna SV
+// Intervalo entre arribos de stock de segunda dosis de vacuna SV
 function IA_2SV() {
     let R = Math.random();
     // f(R) = R*(50.0000-2.0000)+2.0000
     return Math.ceil(R * (50 - 2) + 2);
 }
 
-// Intervalo entre arrivos de stock de dosis de vacuna AZ
+// Intervalo entre arribos de stock de dosis de vacuna AZ
 function IA_AZ() {
     let R = Math.random();
     // f(R) = 2.0046/((1/R-1)^(1/7.0000))+7.0000
     return Math.ceil(2.0046 / ((1 / R - 1) ** (1 / 7)) + 7);
 }
 
-// Intervalo entre arrivos de stock de dosis de vacuna SI
+// Intervalo entre arribos de stock de dosis de vacuna SI
 function IA_SI() {
     let R = Math.random();
     // f(R) = ln(-R+1)/(-0.0956)
@@ -310,7 +310,7 @@ do {
 
             // EFC: Aplicacion dosis 2SV(i)
             TPA_2SV.shift();
-            if (CGV_2SV > CGV_1SV && aDiferir > 0) {
+            if (CGV_1SV > CGV_2SV && aDiferir > 0) {
                 TPA_2SV.push({T: TPLL_2SV, cant: aDiferir});
                 TPA_2SV.sort((a, b) => a.T - b.T);
             }
@@ -353,7 +353,7 @@ do {
 
             // EFC: Aplicacion dosis 2AZ(i)
             TPA_2AZ.shift();
-            if (CGV_2AZ > CGV_1AZ && aDiferir > 0) {
+            if (CGV_1AZ > CGV_2AZ && aDiferir > 0) {
                 TPA_2AZ.push({T: TPLL_AZ, cant: aDiferir});
                 TPA_2AZ.sort((a, b) => a.T - b.T);
             }
@@ -396,7 +396,7 @@ do {
 
             // EFC: Aplicacion dosis 2SI(i)
             TPA_2SI.shift();
-            if (CGV_2SI > CGV_1SI && aDiferir > 0) {
+            if (CGV_1SI > CGV_2SI && aDiferir > 0) {
                 TPA_2SI.push({T: TPLL_SI, cant: aDiferir});
                 TPA_2SI.sort((a, b) => a.T - b.T);
             }
@@ -466,11 +466,7 @@ console.log("Porcentaje a aplicar por día de segunda dosis de vacuna AZ (PAPD_2
 console.log("Porcentaje a aplicar por día de primera dosis de vacuna SI (PAPD_1SI):", (PAPD_1SI * 100).toFixed(2) + "%");
 console.log("Porcentaje a aplicar por día de segunda dosis de vacuna SI (PAPD_2SI):", (PAPD_2SI * 100).toFixed(2) + "%");
 console.log("----");
-let formattingOptions = {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-};
-console.log("Porcentaje de infectados total:", (CIT * 100 / POBLACION).toLocaleString("es-AR", formattingOptions) + "%");
-console.log("Costo de almacenamiento diario promedio:", (CAL / TF).toLocaleString("es-AR", formattingOptions));
+console.log("Porcentaje de infectados total:", (CIT * 100 / POBLACION).toLocaleString("es-AR", {maximumFractionDigits: 2}) + "%");
+console.log("Costo de almacenamiento diario promedio:", (CAL / TF).toLocaleString("es-AR", {maximumFractionDigits: 0}));
 console.log("----------------------------------");
 
